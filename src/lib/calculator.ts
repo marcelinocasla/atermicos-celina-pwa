@@ -1,4 +1,4 @@
-import { PoolDimensions, PoolType, SolariumConfig, QuoteItem, PriceList } from "@/types";
+import { PoolDimensions, PoolType, SolariumConfig, QuoteItem, PriceList, ArcSide } from "@/types";
 import { TILE_SIZE } from "./constants";
 
 const ROUNDING_STEP = 0.5;
@@ -12,6 +12,7 @@ export function calculateQuote(
     type: PoolType,
     hasArc: boolean,
     solarium: SolariumConfig,
+    arcSide: ArcSide, // New param
     prices: PriceList,
     includePastina: boolean,
     pastinaQuantity: number
@@ -93,6 +94,29 @@ export function calculateQuote(
         // Add Arc Pieces via counts (handled at end of function)
         arranqueCount += 2;
         cunaCount += 6;
+
+        // NEW: Add implicit solarium tiles (baldosas) for the Arc Extension.
+        // The visualizer extends the grid by 2 rows/cols to accommodate the arc.
+        // We must account for the tiles in this expansion, minus the ones displaced by the arc itself.
+
+        let sideLengthTiles = 0;
+        if (arcSide === 'top' || arcSide === 'bottom') {
+            // Side is Width (X). Total width in tiles = PoolWidth + Borders(2) + Solarium Sides
+            sideLengthTiles = widthCount + 2 + solarium.left + solarium.right;
+        } else {
+            // Side is Length (Y). Total length in tiles = PoolLength + Borders(2) + Solarium Top/Bottom
+            sideLengthTiles = lengthCount + 2 + solarium.top + solarium.bottom;
+        }
+
+        // Area added = SideLength * 2 rows.
+        // Tiles blocked by Arc = 4 (in Border row, handled by ordeLCheck-=4) + 2 (in first Extension row).
+        // The Border row tiles are already "removed" from Borde L count above.
+        // We are adding "Baldosas" for the 2 extension rows.
+        // Total Extension Tiles = (SideLength * 2).
+        // Minus the 2 tiles blocked in the first extension row.
+        const implicitBaldosas = (sideLengthTiles * 2) - 2;
+
+        baldosaCount += Math.max(0, implicitBaldosas);
     }
 
     // 5. Solarium Expansion

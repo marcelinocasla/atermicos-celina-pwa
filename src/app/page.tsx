@@ -34,6 +34,7 @@ export default function QuotePage() {
         poolType,
         hasArc,
         solarium,
+        arcSide,
         prices,
         includePastina,
         pastinaQuantity

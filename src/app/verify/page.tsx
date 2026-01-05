@@ -28,7 +28,10 @@ export default function VerificationPage() {
                 'concrete',
                 false,
                 { top: 0, bottom: 0, left: 0, right: 0 },
-                DEFAULT_PRICES
+                'top', // ArcSide default
+                DEFAULT_PRICES,
+                false, // Include Pastina
+                0 // Pastina Qty
             );
 
             const bordeL = res.items.find(i => i.id === 'borde_l');
@@ -57,7 +60,10 @@ export default function VerificationPage() {
                 'fiber',
                 false,
                 { top: 0, bottom: 0, left: 0, right: 0 },
-                DEFAULT_PRICES
+                'top',
+                DEFAULT_PRICES,
+                false,
+                0
             );
 
             const dims = res.dimensions;
@@ -88,7 +94,10 @@ export default function VerificationPage() {
                 'concrete',
                 true, // hasArc
                 { top: 0, bottom: 0, left: 0, right: 0 },
-                DEFAULT_PRICES
+                'top',
+                DEFAULT_PRICES,
+                false,
+                0
             );
 
             const bordeL = res.items.find(i => i.id === 'borde_l')?.quantity || 0;
@@ -111,7 +120,10 @@ export default function VerificationPage() {
                 'concrete',
                 false,
                 { top: 1, bottom: 0, left: 0, right: 1 },
-                DEFAULT_PRICES
+                'top',
+                DEFAULT_PRICES,
+                false,
+                0
             );
 
             const baldosa = res.items.find(i => i.id === 'baldosa')?.quantity || 0;
