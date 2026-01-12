@@ -12,16 +12,23 @@ export type PoolDimensions = {
   width: number;
 };
 
+export type ProductDetails = {
+  price: number;
+  stock: number;
+  colors?: string[];
+  inStock: boolean;
+};
+
 export type PriceList = {
-  baldosa: number; // 50x50
-  bordeL: number; // 50x50
-  esquinero: number; // Unit
-  arranqueArco: number; // Unit
-  cunaArco: number; // Unit
-  deck: number; // 12x100
-  deckL: number; // 12x100
-  pastina: number; // per Kg
-  pallet: number; // Service cost per pallet (or global service?) User said "Servicio de Palletizado: [Precio editable]", likely per pallet or global. let's assume global or per unit logic later.
+  baldosa: ProductDetails;
+  bordeL: ProductDetails;
+  esquinero: ProductDetails;
+  arranqueArco: ProductDetails;
+  cunaArco: ProductDetails;
+  deck: ProductDetails;
+  deckL: ProductDetails;
+  pastina: ProductDetails;
+  pallet: ProductDetails;
 };
 
 export type CompanyInfo = {
@@ -58,4 +65,16 @@ export type HistoryEntry = {
   items: QuoteItem[];
   total: number;
   status: 'pending' | 'approved' | 'rejected';
+  config: {
+    dimensions: PoolDimensions;
+    poolType: PoolType;
+    solarium: SolariumConfig;
+    hasArc: boolean;
+    arcSide: ArcSide;
+    selectedColor: string;
+    shippingCost: number;
+    includePallet: boolean;
+    includePastina: boolean;
+    pastinaQuantity: number;
+  };
 };

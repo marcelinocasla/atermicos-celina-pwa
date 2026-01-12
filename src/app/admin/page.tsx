@@ -1,6 +1,7 @@
 'use client';
 
 import { useAdminStore } from '@/store/adminStore';
+import { useQuoteStore } from '@/store/quoteStore';
 import { useState, useEffect } from 'react';
 import {
     Save,
@@ -13,7 +14,11 @@ import {
     Search,
     Filter,
     ArrowUpRight,
-    ArrowDownRight
+    ArrowDownRight,
+    Trash2,
+    Edit3,
+    Plus,
+    X
 } from 'lucide-react';
 import { PriceList, CompanyInfo } from '@/types';
 import AdminSidebar from '@/components/AdminSidebar';
@@ -62,7 +67,7 @@ export default function AdminPage() {
                 </header>
 
                 <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out">
-                    {activeTab === 'overview' && <OverviewTab />}
+                    {activeTab === 'overview' && <OverviewTab setActiveTab={setActiveTab} />}
                     {activeTab === 'builder' && <div className="scale-[0.98] origin-top opacity-90 hover:opacity-100 transition-opacity"><QuotePage /></div>}
                     {activeTab === 'catalog' && <CatalogTab prices={prices} updatePrices={updatePrices} />}
                     {activeTab === 'history' && <HistoryTab />}
@@ -75,8 +80,9 @@ export default function AdminPage() {
 
 // --- TAB COMPONENTS (NANO BANANA PRO) ---
 
-function OverviewTab() {
+function OverviewTab({ setActiveTab }: { setActiveTab: (tab: string) => void }) {
     const { history } = useAdminStore();
+    const { loadFullQuote } = useQuoteStore();
 
     // Calculate Real Stats
     const totalIncome = history
@@ -173,13 +179,13 @@ function OverviewTab() {
                 </div>
 
                 {/* Recent Activity Feed */}
-                <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/60 rounded-3xl p-6 shadow-xl">
+                <div className="bg-slate-900/40 backdrop-blur-md border border-slate-800/60 rounded-3xl p-6 shadow-xl flex flex-col">
                     <h3 className="font-bold text-white mb-6 flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Últimos Presupuestos
                     </h3>
-                    <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-                        {history.slice(0, 5).map((item, i) => (
-                            <div key={i} className="flex gap-4 p-3 rounded-2xl hover:bg-slate-800/40 transition-colors cursor-default group border border-transparent hover:border-slate-800/50">
+                    <div className="space-y-4 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar flex-1">
+                        {history.slice(0, 10).map((item, i) => (
+                            <div key={i} className="flex gap-4 p-3 rounded-2xl hover:bg-slate-800/40 transition-colors cursor-default group border border-transparent hover:border-slate-800/50 items-center">
                                 <div className={`w-10 h-10 rounded-xl bg-blue-500 bg-opacity-10 flex items-center justify-center text-white font-bold text-xs ring-1 ring-white/10 group-hover:ring-white/30 transition-all`}>
                                     {item.clientName.charAt(0)}
                                 </div>
@@ -187,13 +193,45 @@ function OverviewTab() {
                                     <p className="text-sm font-medium text-slate-200 truncate group-hover:text-white transition-colors">{item.clientName}</p>
                                     <p className="text-xs text-slate-500 font-medium">#{item.id.slice(0, 8)}</p>
                                 </div>
-                                <div className="text-right">
+                                <div className="text-right mr-2">
                                     <p className="text-xs font-bold text-slate-300 group-hover:text-blue-400 transition-colors">${item.total.toLocaleString()}</p>
                                     <p className="text-[10px] text-slate-600">{new Date(item.date).toLocaleDateString()}</p>
                                 </div>
+                                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                        onClick={() => {
+                                            if (!item.config) {
+                                                alert('Este presupuesto es antiguo y no tiene configuración guardada para editar.');
+                                                return;
+                                            }
+                                            loadFullQuote(item.config, {
+                                                name: item.clientName,
+                                                phone: '',
+                                                address: '',
+                                                transport: ''
+                                            });
+                                            setActiveTab('builder');
+                                        }}
+                                        className={`p-1.5 rounded-lg transition-all ${!item.config ? 'text-slate-700 cursor-not-allowed' : 'hover:bg-blue-500/20 text-blue-400/70 hover:text-blue-400'}`}
+                                        title={item.config ? "Editar" : "No editable"}
+                                        disabled={!item.config}
+                                    >
+                                        <Edit3 className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (confirm('¿Eliminar este presupuesto?')) useAdminStore.getState().removeQuoteFromHistory(item.id);
+                                        }}
+                                        className="p-1.5 rounded-lg hover:bg-red-500/20 text-red-400/70 hover:text-red-400 transition-all"
+                                        title="Eliminar"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </div>
                         ))}
-                        {history.length === 0 && <p className="text-xs text-slate-600 text-center py-4">No hay actividad reciente.</p>}
+                        {history.length === 0 && <p className="text-xs text-slate-600 text-center py-4 text-balance">Comienza generando un nuevo presupuesto en la pestaña "Cotizador".</p>}
                     </div>
                 </div>
             </div>
@@ -237,17 +275,16 @@ function CatalogTab({ prices, updatePrices }: CatalogTabProps) {
                 <table className="w-full text-sm">
                     <thead>
                         <tr className="bg-slate-950/80 text-left">
-                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Item</th>
-                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Categoría</th>
-                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Stock</th>
+                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest min-w-[200px]">Item</th>
+                            <th className="px-4 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Stock Disp.</th>
+                            <th className="px-4 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-center">Cantidad</th>
+                            <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest">Opciones / Colores</th>
                             <th className="px-6 py-4 text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Precio Unitario</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-800/50">
-                        {Object.entries(localPrices).map(([key, val]: [string, any], index) => {
+                        {Object.entries(localPrices).map(([key, val]: [string, any]) => {
                             const name = key.replace(/([A-Z])/g, ' $1').trim();
-                            // Mock stock status for visual flair
-                            const inStock = index % 3 !== 0;
 
                             return (
                                 <tr key={key} className="group hover:bg-blue-500/5 transition-colors">
@@ -259,22 +296,63 @@ function CatalogTab({ prices, updatePrices }: CatalogTabProps) {
                                             <span className="font-semibold text-slate-200 capitalize group-hover:text-white transition-colors">{name}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 text-slate-500">
-                                        <span className="px-2 py-1 rounded-md bg-slate-800/50 border border-slate-700 text-xs font-medium">Material Base</span>
+                                    <td className="px-4 py-4 text-center">
+                                        <button
+                                            onClick={() => setLocalPrices({ ...localPrices, [key]: { ...val, inStock: !val.inStock } })}
+                                            className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[10px] font-bold border transition-all ${val.inStock ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}
+                                        >
+                                            <span className={`w-1.5 h-1.5 rounded-full ${val.inStock ? 'bg-emerald-500' : 'bg-red-500'} ${val.inStock ? 'animate-pulse' : ''}`} />
+                                            {val.inStock ? 'DISPONIBLE' : 'SIN STOCK'}
+                                        </button>
                                     </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${inStock ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
-                                            <span className={`w-1.5 h-1.5 rounded-full ${inStock ? 'bg-emerald-500' : 'bg-red-500'} animate-pulse`} />
-                                            {inStock ? 'En Stock' : 'Agotado'}
-                                        </span>
+                                    <td className="px-4 py-4">
+                                        <div className="flex justify-center">
+                                            <input
+                                                type="number"
+                                                value={val.stock}
+                                                onChange={(e) => setLocalPrices({ ...localPrices, [key]: { ...val, stock: Number(e.target.value) } })}
+                                                className="w-20 bg-slate-950/50 border border-slate-800 rounded-lg px-2 py-1.5 text-center font-mono text-xs text-slate-400 focus:ring-1 focus:ring-blue-500/50 outline-none"
+                                            />
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {val.colors?.map((c: string, ci: number) => (
+                                                <span key={ci} className="px-2 py-0.5 rounded-md bg-slate-800 text-[10px] text-slate-400 border border-slate-700 flex items-center gap-1">
+                                                    {c}
+                                                    <button
+                                                        onClick={() => {
+                                                            const newColors = [...val.colors];
+                                                            newColors.splice(ci, 1);
+                                                            setLocalPrices({ ...localPrices, [key]: { ...val, colors: newColors } });
+                                                        }}
+                                                        className="hover:text-red-400 transition-colors"
+                                                    >
+                                                        <X className="w-2.5 h-2.5" />
+                                                    </button>
+                                                </span>
+                                            ))}
+                                            <button
+                                                onClick={() => {
+                                                    const color = prompt('Nombre del color:');
+                                                    if (color) {
+                                                        const newColors = [...(val.colors || []), color];
+                                                        setLocalPrices({ ...localPrices, [key]: { ...val, colors: newColors } });
+                                                    }
+                                                }}
+                                                className="px-2 py-0.5 rounded-md bg-blue-500/10 text-[10px] text-blue-400 border border-blue-500/20 flex items-center gap-1 hover:bg-blue-500/20 transition-all"
+                                            >
+                                                <Plus className="w-2.5 h-2.5" /> Nuevo
+                                            </button>
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="relative inline-block group-hover:scale-105 transition-transform">
                                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs font-bold">$</span>
                                             <input
                                                 type="number"
-                                                value={val}
-                                                onChange={(e) => setLocalPrices({ ...localPrices, [key]: Number(e.target.value) })}
+                                                value={val.price}
+                                                onChange={(e) => setLocalPrices({ ...localPrices, [key]: { ...val, price: Number(e.target.value) } })}
                                                 className="w-32 bg-slate-950 border border-slate-700/50 rounded-lg pl-6 pr-3 py-2 text-right font-mono text-emerald-400 font-bold focus:ring-2 focus:ring-blue-500 transition-all outline-none shadow-inner"
                                             />
                                         </div>

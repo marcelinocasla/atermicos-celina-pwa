@@ -10,6 +10,7 @@ interface AdminState {
     updatePrices: (prices: Partial<PriceList>) => void;
     updateCompanyInfo: (info: Partial<CompanyInfo>) => void;
     addQuoteToHistory: (quote: HistoryEntry) => void;
+    removeQuoteFromHistory: (id: string) => void;
 }
 
 export const useAdminStore = create<AdminState>()(
@@ -29,6 +30,10 @@ export const useAdminStore = create<AdminState>()(
             addQuoteToHistory: (quote) =>
                 set((state) => ({
                     history: [quote, ...state.history],
+                })),
+            removeQuoteFromHistory: (id) =>
+                set((state) => ({
+                    history: state.history.filter(h => h.id !== id),
                 })),
         }),
         {

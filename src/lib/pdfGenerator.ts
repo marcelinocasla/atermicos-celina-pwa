@@ -32,22 +32,39 @@ export async function generatePDF({
     const pageWidth = doc.internal.pageSize.width;
 
     // 1. Header (Logo & Company Info)
+    let hasLogo = false;
     if (companyInfo.logoUrl) {
         try {
             doc.addImage(companyInfo.logoUrl, 'PNG', 15, 15, 30, 30);
+            hasLogo = true;
         } catch (e) {
             console.warn('Could not add logo', e);
         }
     }
 
+    if (!hasLogo) {
+        // Draw Branded "AC" Badge
+        doc.setFillColor(37, 99, 235); // Blue-600
+        doc.roundedRect(15, 15, 20, 20, 2, 2, 'F');
+        doc.setFontSize(12);
+        doc.setTextColor(255, 255, 255);
+        doc.setFont("helvetica", "bold");
+        doc.text("AC", 25, 28, { align: 'center' });
+        doc.setTextColor(40); // Reset for name
+    }
+
+    const textX = hasLogo ? 50 : 40;
+
     doc.setFontSize(22);
     doc.setTextColor(40);
-    doc.text(companyInfo.name || "PRESUPUESTO", companyInfo.logoUrl ? 50 : 15, 25);
+    doc.setFont("helvetica", "bold");
+    doc.text(companyInfo.name || "ATÉRMICOS CELINA", textX, 25);
 
     doc.setFontSize(10);
     doc.setTextColor(100);
-    doc.text(companyInfo.address || "", companyInfo.logoUrl ? 50 : 15, 32);
-    doc.text(companyInfo.phone || "", companyInfo.logoUrl ? 50 : 15, 37);
+    doc.setFont("helvetica", "normal");
+    doc.text(companyInfo.address || "Ventas a todo el país", textX, 32);
+    doc.text(companyInfo.phone || "Consultas por WhatsApp", textX, 37);
 
     // Date
     const dateStr = new Date().toLocaleDateString('es-AR', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -223,9 +240,12 @@ export async function generatePDF({
             // Dimensions Text
             doc.setFontSize(8);
             doc.setTextColor(100);
+            // Width Label (at bottom)
             doc.text(`${poolDimensions.width}m`, tX(layout.viewBoxW / 2), tY(layout.viewBoxH) + 5, { align: 'center' });
+            // Length Label (at right)
+            doc.text(`${poolDimensions.length}m`, tX(layout.viewBoxW) + 5, tY(layout.viewBoxH / 2), { angle: -90, align: 'center' });
 
-            finalY += (layout.viewBoxH * scale) + 10;
+            finalY += (layout.viewBoxH * scale) + 15;
             // Add note
             doc.setFontSize(8);
             doc.setTextColor(150);
@@ -237,6 +257,38 @@ export async function generatePDF({
             doc.text("Error generando plano 2D", 15, finalY);
         }
     }
+
+    // 5. Commercial Conditions
+    if (finalY + 40 > doc.internal.pageSize.height) {
+        doc.addPage();
+        finalY = 20;
+    }
+
+    doc.setDrawColor(230);
+    doc.line(15, finalY, pageWidth - 15, finalY);
+    finalY += 10;
+
+    doc.setFontSize(11);
+    doc.setTextColor(40);
+    doc.setFont("helvetica", "bold");
+    doc.text("Puntos importantes:", 15, finalY);
+    finalY += 7;
+
+    doc.setFontSize(9);
+    doc.setTextColor(70);
+    doc.setFont("helvetica", "normal");
+
+    const points = [
+        "- Presupuesto válido por 3 días, sujeto a variación de precios",
+        "- Forma de pago: 50% Anticipo, resto contra entrega al momento de la entrega.",
+        "- Los envíos al interior requieren pago de palletizado y envío al transporte elegido por el cliente.",
+        "- Las descargas en obra corren por cuenta del cliente."
+    ];
+
+    points.forEach(point => {
+        doc.text(point, 15, finalY);
+        finalY += 5;
+    });
 
     // Footer
     const pageCount = doc.getNumberOfPages();

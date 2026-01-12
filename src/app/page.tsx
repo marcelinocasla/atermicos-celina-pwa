@@ -43,7 +43,7 @@ export default function QuotePage() {
       // Pallet Calculation (1 pallet approx 100 items - heuristic)
       const totalItems = result.items.reduce((acc, item) => acc + item.quantity, 0);
       const palletCount = Math.ceil(totalItems / 100);
-      const palletPrice = prices?.pallet ?? 0;
+      const palletPrice = prices?.pallet?.price ?? 0;
       const totalPalletCost = includePallet ? (palletCount * palletPrice) : 0;
       const subMaterial = result.items.reduce((acc, item) => acc + item.subtotal, 0);
       const finalTotal = subMaterial + totalPalletCost + (shippingCost || 0);
@@ -91,7 +91,19 @@ export default function QuotePage() {
       date: new Date().toISOString(),
       items: currentQuote.items,
       total: currentQuote.total,
-      status: 'approved' // Default to approved/generated
+      status: 'approved',
+      config: {
+        dimensions,
+        poolType,
+        solarium,
+        hasArc,
+        arcSide,
+        selectedColor,
+        shippingCost,
+        includePallet,
+        includePastina,
+        pastinaQuantity
+      }
     });
 
     try {
@@ -180,14 +192,14 @@ export default function QuotePage() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <Input label="Largo (m)" type="number" value={dimensions.length} onChange={(v) => {
+                <Input label="Largo (m)" type="number" value={dimensions.length === 0 ? '' : dimensions.length} onChange={(v) => {
                   const val = Number(v);
                   setPoolConfig({ dimensions: { ...dimensions, length: isNaN(val) ? 0 : val } });
-                }} />
-                <Input label="Ancho (m)" type="number" value={dimensions.width} onChange={(v) => {
+                }} placeholder="0" />
+                <Input label="Ancho (m)" type="number" value={dimensions.width === 0 ? '' : dimensions.width} onChange={(v) => {
                   const val = Number(v);
                   setPoolConfig({ dimensions: { ...dimensions, width: isNaN(val) ? 0 : val } });
-                }} />
+                }} placeholder="0" />
               </div>
 
               <div className="flex flex-col gap-3">
@@ -242,18 +254,18 @@ export default function QuotePage() {
               <h2 className="flex items-center gap-2 text-sm font-semibold text-orange-400 uppercase tracking-wider mb-6">
                 <Palette className="w-4 h-4" /> Expansión Solarium (Hileras)
               </h2>
-              <div className="max-w-md mx-auto grid grid-cols-3 gap-4">
+              <div className="max-w-md mx-auto grid grid-cols-3 gap-4 items-center">
                 <div className="col-start-2">
-                  <Input label="Arriba" type="number" value={solarium.top} onChange={(v) => setSolarium({ top: Number(v) })} center />
+                  <StepperInput label="Arriba" value={solarium.top} onChange={(v) => setSolarium({ top: v })} />
                 </div>
                 <div className="col-start-1 row-start-2">
-                  <Input label="Izquierda" type="number" value={solarium.left} onChange={(v) => setSolarium({ left: Number(v) })} center />
+                  <StepperInput label="Izquierda" value={solarium.left} onChange={(v) => setSolarium({ left: v })} />
                 </div>
                 <div className="col-start-3 row-start-2">
-                  <Input label="Derecha" type="number" value={solarium.right} onChange={(v) => setSolarium({ right: Number(v) })} center />
+                  <StepperInput label="Derecha" value={solarium.right} onChange={(v) => setSolarium({ right: v })} />
                 </div>
                 <div className="col-start-2 row-start-3">
-                  <Input label="Abajo" type="number" value={solarium.bottom} onChange={(v) => setSolarium({ bottom: Number(v) })} center />
+                  <StepperInput label="Abajo" value={solarium.bottom} onChange={(v) => setSolarium({ bottom: v })} />
                 </div>
               </div>
             </div>
@@ -270,7 +282,7 @@ export default function QuotePage() {
                   <div className="flex items-center gap-4 mt-2">
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input type="checkbox" checked={includePastina} onChange={(e) => setClientInfo({ includePastina: e.target.checked })} className="w-5 h-5 rounded border-slate-600 bg-slate-900 text-blue-500 focus:ring-offset-slate-900" />
-                      <span className="text-sm text-slate-300">Incluir Pastina (${prices.pastina}/kg)</span>
+                      <span className="text-sm text-slate-300">Incluir Pastina (${prices.pastina.price}/kg)</span>
                     </label>
                     {includePastina && (
                       <div className="w-32">
@@ -326,7 +338,7 @@ export default function QuotePage() {
                       <tr className="bg-green-900/10 text-green-200/80">
                         <td className="px-4 py-3">Palletizado</td>
                         <td className="px-4 py-3 text-center">{currentQuote?.palletCount}</td>
-                        <td className="px-4 py-3 text-right font-mono">${prices.pallet}</td>
+                        <td className="px-4 py-3 text-right font-mono">${prices.pallet.price}</td>
                         <td className="px-4 py-3 text-right font-mono text-green-400">${currentQuote?.palletCost?.toLocaleString() || '0'}</td>
                       </tr>
                     )}
@@ -416,17 +428,41 @@ interface InputProps {
 function Input({ label, value, onChange, type = "text", className = "", placeholder = "", center = false }: InputProps) {
   return (
     <div className={`group ${className}`}>
-      <label className={`block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2 group-focus-within:text-blue-400 transition-colors ${center ? 'text-center' : ''}`}>{label}</label>
+      <label className={`block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 group-focus-within:text-blue-400 transition-colors ${center ? 'text-center' : ''}`}>{label}</label>
       <div className="relative">
         <input
           type={type}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className={`w-full px-4 py-3 rounded-xl bg-slate-900/50 border border-slate-800 text-slate-200 placeholder-slate-600 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all font-medium shadow-inner ${center ? 'text-center' : ''}`}
+          className={`w-full px-4 py-2.5 rounded-xl bg-slate-900/50 border border-slate-800 text-slate-200 placeholder-slate-700 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 outline-none transition-all font-medium shadow-inner ${center ? 'text-center' : ''}`}
         />
-        {/* Glow effect on focus */}
         <div className="absolute inset-0 rounded-xl bg-blue-500/5 opacity-0 group-focus-within:opacity-100 pointer-events-none transition-opacity duration-500" />
+      </div>
+    </div>
+  );
+}
+
+function StepperInput({ label, value, onChange }: { label: string, value: number, onChange: (v: number) => void }) {
+  return (
+    <div className="group flex flex-col items-center">
+      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5 group-focus-within:text-orange-400 transition-colors">{label}</label>
+      <div className="flex items-center bg-slate-950/50 border border-slate-800 rounded-xl overflow-hidden shadow-inner">
+        <button
+          onClick={() => onChange(Math.max(0, value - 1))}
+          className="p-2.5 text-slate-500 hover:text-white hover:bg-slate-800 transition-colors"
+        >
+          <ArrowDownRight className="w-4 h-4" />
+        </button>
+        <div className="w-12 text-center font-bold text-slate-200 text-sm">
+          {value}
+        </div>
+        <button
+          onClick={() => onChange(value + 1)}
+          className="p-2.5 text-slate-500 hover:text-white hover:bg-slate-800 transition-colors"
+        >
+          <ArrowUpRight className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );

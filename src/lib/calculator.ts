@@ -42,7 +42,7 @@ export function calculateQuote(
         if (id === 'deck_l') priceKey = 'deckL';
         if (id === 'pastina') priceKey = 'pastina';
 
-        const unitPrice = priceOverride ?? (priceKey ? prices[priceKey] : 0);
+        const unitPrice = priceOverride ?? (priceKey ? prices[priceKey].price : 0);
 
         items.push({
             id,
