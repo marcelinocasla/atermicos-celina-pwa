@@ -48,18 +48,19 @@ export default function QuotePage() {
       const palletCount = Math.ceil(totalItems / 100);
       const palletPrice = prices?.pallet?.price ?? 0;
       const totalPalletCost = includePallet ? (palletCount * palletPrice) : 0;
-      const subMaterial = result.items.reduce((acc, item) => acc + item.subtotal, 0);
-      const installationCost = includeInstallation ? (result.installation?.laborCost || 0) : 0;
-      const finalTotal = subMaterial + totalPalletCost + (shippingCost || 0) + installationCost;
+      const subMaterial = result.items.reduce((acc, item) => acc + Number(item.subtotal), 0);
+      const palletCostVal = includePallet ? (palletCount * (Number(prices?.pallet?.price) || 0)) : 0;
+      const shipCostVal = Number(shippingCost || 0);
+      const instCostVal = includeInstallation ? (Number(result.installation?.laborCost) || 0) : 0;
+
+      const finalTotal = subMaterial + palletCostVal + shipCostVal + instCostVal;
 
       setQuoteResult({
         ...result,
-        items: result.items,
         subtotalMaterial: subMaterial,
         palletCount,
-        palletCost: totalPalletCost,
-        shippingCost: shippingCost || 0,
-        installation: result.installation,
+        palletCost: palletCostVal,
+        shippingCost: shipCostVal,
         total: finalTotal
       });
     } catch (err) {
