@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { Settings, Download, Calculator, User, Layers, Palette, Truck, CheckCircle2, Circle } from 'lucide-react';
+import { Settings, Download, Calculator, User, Layers, Palette, Truck, CheckCircle2, Circle, Minus, Plus } from 'lucide-react';
 import { useQuoteStore } from '@/store/quoteStore';
 import { useAdminStore } from '@/store/adminStore';
 import { calculateQuote } from '@/lib/calculator';
@@ -452,7 +452,7 @@ function StepperInput({ label, value, onChange }: { label: string, value: number
           onClick={() => onChange(Math.max(0, value - 1))}
           className="p-2.5 text-slate-500 hover:text-white hover:bg-slate-800 transition-colors"
         >
-          <ArrowDownRight className="w-4 h-4" />
+          <Minus className="w-4 h-4" />
         </button>
         <div className="w-12 text-center font-bold text-slate-200 text-sm">
           {value}
@@ -461,7 +461,7 @@ function StepperInput({ label, value, onChange }: { label: string, value: number
           onClick={() => onChange(value + 1)}
           className="p-2.5 text-slate-500 hover:text-white hover:bg-slate-800 transition-colors"
         >
-          <ArrowUpRight className="w-4 h-4" />
+          <Plus className="w-4 h-4" />
         </button>
       </div>
     </div>
