@@ -14,7 +14,8 @@ export default function QuotePage() {
   const {
     clientName, clientPhone, clientAddress, transportName, includePallet, shippingCost, includePastina, pastinaQuantity,
     poolType, dimensions, hasArc, arcSide, solarium, selectedColor,
-    setClientInfo, setPoolConfig, setSolarium, setQuoteResult, currentQuote
+    includeInstallation, installationType,
+    setClientInfo, setPoolConfig, setSolarium, setInstallationConfig, setQuoteResult, currentQuote
   } = useQuoteStore();
 
   const { prices, companyInfo, addQuoteToHistory } = useAdminStore();
@@ -37,7 +38,9 @@ export default function QuotePage() {
         arcSide,
         prices,
         includePastina,
-        pastinaQuantity
+        pastinaQuantity,
+        includeInstallation,
+        installationType
       );
 
       // Pallet Calculation (1 pallet approx 100 items - heuristic)
@@ -46,7 +49,8 @@ export default function QuotePage() {
       const palletPrice = prices?.pallet?.price ?? 0;
       const totalPalletCost = includePallet ? (palletCount * palletPrice) : 0;
       const subMaterial = result.items.reduce((acc, item) => acc + item.subtotal, 0);
-      const finalTotal = subMaterial + totalPalletCost + (shippingCost || 0);
+      const installationCost = includeInstallation ? (result.installation?.laborCost || 0) : 0;
+      const finalTotal = subMaterial + totalPalletCost + (shippingCost || 0) + installationCost;
 
       setQuoteResult({
         ...result,
@@ -55,13 +59,14 @@ export default function QuotePage() {
         palletCount,
         palletCost: totalPalletCost,
         shippingCost: shippingCost || 0,
+        installation: result.installation,
         total: finalTotal
       });
     } catch (err) {
       console.error("Calculation Error", err);
     }
 
-  }, [isClient, dimensions, poolType, hasArc, solarium, prices, includePallet, shippingCost, includePastina, pastinaQuantity, setQuoteResult]);
+  }, [isClient, dimensions, poolType, hasArc, solarium, prices, includePallet, shippingCost, includePastina, pastinaQuantity, includeInstallation, installationType, setQuoteResult]);
 
   // PDF Generation
   const visualizerRef = useRef<HTMLDivElement>(null);
@@ -102,7 +107,9 @@ export default function QuotePage() {
         shippingCost,
         includePallet,
         includePastina,
-        pastinaQuantity
+        pastinaQuantity,
+        includeInstallation,
+        installationType
       }
     });
 
@@ -298,6 +305,52 @@ export default function QuotePage() {
               </div>
             </div>
 
+            {/* Installation Section */}
+            <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800/50 rounded-2xl p-6 shadow-xl">
+              <h2 className="flex items-center gap-2 text-sm font-semibold text-cyan-400 uppercase tracking-wider mb-4">
+                <CheckCircle2 className="w-4 h-4" /> ¿Necesitas colocación?
+              </h2>
+              <div className="space-y-4">
+                <label className="flex items-center gap-3 p-3 rounded-xl border border-slate-800 hover:bg-slate-800/50 cursor-pointer transition-all">
+                  <input
+                    type="checkbox"
+                    checked={includeInstallation}
+                    onChange={(e) => setInstallationConfig({ includeInstallation: e.target.checked })}
+                    className="w-5 h-5 rounded border-slate-600 bg-slate-900 text-cyan-500 focus:ring-offset-slate-900"
+                  />
+                  <div>
+                    <span className="text-sm font-medium block">Sí, quiero cotizar colocación</span>
+                    <p className="text-xs text-slate-500">Mano de obra y cálculo de materiales base.</p>
+                  </div>
+                </label>
+
+                {includeInstallation && (
+                  <div className="animate-in fade-in slide-in-from-top-2 duration-300 grid grid-cols-1 md:grid-cols-2 gap-3 pl-8">
+                    <button
+                      onClick={() => setInstallationConfig({ installationType: 'existing' })}
+                      className={`p-3 rounded-xl border text-left transition-all ${installationType === 'existing'
+                        ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400'
+                        : 'bg-slate-900 border-slate-700 text-slate-500 hover:border-slate-500'
+                        }`}
+                    >
+                      <span className="text-xs font-bold block uppercase mb-1">Escenario A</span>
+                      <span className="text-sm">Tengo carpeta/contrapiso listo</span>
+                    </button>
+                    <button
+                      onClick={() => setInstallationConfig({ installationType: 'new_slab' })}
+                      className={`p-3 rounded-xl border text-left transition-all ${installationType === 'new_slab'
+                        ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400'
+                        : 'bg-slate-900 border-slate-700 text-slate-500 hover:border-slate-500'
+                        }`}
+                    >
+                      <span className="text-xs font-bold block uppercase mb-1">Escenario B</span>
+                      <span className="text-sm">Es sobre tierra (Hacer hormigón)</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
           </div>
 
           {/* Right Panel: Preview & Quote */}
@@ -348,9 +401,34 @@ export default function QuotePage() {
                         <td className="px-4 py-3 text-right font-mono text-blue-400">${shippingCost.toLocaleString()}</td>
                       </tr>
                     )}
+                    {includeInstallation && currentQuote?.installation && (
+                      <tr className="bg-cyan-900/10 text-cyan-200/80">
+                        <td className="px-4 py-3" colSpan={3}>Mano de Obra Colocación ({currentQuote.installation.laborCost === 0 ? 'Consultar' : 'Aprox.'})</td>
+                        <td className="px-4 py-3 text-right font-mono text-cyan-400">${currentQuote.installation.laborCost.toLocaleString()}</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
+
+              {includeInstallation && currentQuote?.installation && (
+                <div className="p-4 bg-slate-900/40 border-t border-white/5">
+                  <h4 className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <Layers className="w-3 h-3" /> Materiales Sugeridos (A comprar por el cliente)
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {currentQuote.installation.materials.items.map((item, idx) => (
+                      <div key={idx} className="flex justify-between items-center bg-slate-950/50 p-2 rounded-lg border border-slate-800/50">
+                        <span className="text-xs text-slate-400">{item.name}</span>
+                        <span className="text-xs font-mono text-slate-200">{item.quantity} {item.unit}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-[9px] text-slate-500 italic text-center">
+                    * Los materiales NO están incluidos en el presupuesto de venta de baldosas. Esta lista es estimativa.
+                  </p>
+                </div>
+              )}
 
               <div className="p-4 bg-slate-900/80 flex gap-3">
                 <button

@@ -1,4 +1,4 @@
-import { PoolDimensions, PoolType, SolariumConfig, QuoteItem, PriceList, ArcSide } from "@/types";
+import { PoolDimensions, PoolType, SolariumConfig, QuoteItem, PriceList, ArcSide, QuoteResult, InstallationType, InstallationResult } from "@/types";
 import { TILE_SIZE } from "./constants";
 
 const ROUNDING_STEP = 0.5;
@@ -15,8 +15,10 @@ export function calculateQuote(
     arcSide: ArcSide, // New param
     prices: PriceList,
     includePastina: boolean,
-    pastinaQuantity: number
-): { items: QuoteItem[]; dimensions: PoolDimensions } {
+    pastinaQuantity: number,
+    includeInstallation: boolean,
+    installationType: InstallationType
+): { items: QuoteItem[]; dimensions: PoolDimensions; installation?: InstallationResult } {
     // 1. Normalize dimensions
     const dims = { ...rawDimensions };
     if (type === 'fiber') {
@@ -152,5 +154,60 @@ export function calculateQuote(
         addItem('pastina', 'Pastina (x Kg)', pastinaQuantity || 0);
     }
 
-    return { items, dimensions: dims };
+    // 6. Installation Logic
+    let installation: InstallationResult | undefined;
+    if (includeInstallation) {
+        // Metros Lineales: Base Pool + Borders
+        // Standard perimeter = (Length + Border * 2) + (Width + Border * 2) * 2? 
+        // No, it's simpler: the borders are 50x50. 
+        // The total number of border pieces (straight + corners/arc) * 0.5m gives the perimeter.
+        const totalPieces = ordeLCheck + esquineroCount + arranqueCount + cunaCount;
+        const metrosLineales = totalPieces * TILE_SIZE;
+        const totalArea = (fullWidthTiles * fullLengthTiles) * (TILE_SIZE * TILE_SIZE);
+
+        installation = calculateInstallation(metrosLineales, totalArea, installationType);
+    }
+
+    return { items, dimensions: dims, installation };
+}
+
+function calculateInstallation(metrosLineales: number, totalArea: number, type: InstallationType): InstallationResult {
+    const PRECIO_LINEAL_SIN_HORMIGON = 15000;
+    const PRECIO_M2_CON_HORMIGON = 30000;
+    const ANCHO_BALDOSA = 0.5;
+
+    let result: InstallationResult = {
+        laborCost: 0,
+        materials: { items: [] },
+        description: ""
+    };
+
+    if (type === 'existing') {
+        result.description = "Colocación sobre carpeta existente + Pilotines";
+        result.laborCost = metrosLineales * PRECIO_LINEAL_SIN_HORMIGON;
+
+        const cantidadPilotines = Math.ceil(metrosLineales / 3);
+        const varillasHierro = Math.ceil(cantidadPilotines / 5);
+        const superficie = metrosLineales * ANCHO_BALDOSA;
+
+        result.materials.items = [
+            { name: "Cemento", quantity: Math.ceil(superficie * 0.5), unit: "bolsas" },
+            { name: "Cal", quantity: Math.ceil(superficie * 0.7), unit: "bolsas" },
+            { name: "Arena", quantity: (superficie * 0.06).toFixed(1), unit: "m³" },
+            { name: "Varillas del 6", quantity: varillasHierro, unit: "un" },
+            { name: "Nota para el albañil", quantity: cantidadPilotines, unit: "pilotines a realizar" }
+        ];
+    } else {
+        result.description = "Hormigonado completo + Colocación";
+        result.laborCost = totalArea * PRECIO_M2_CON_HORMIGON;
+
+        result.materials.items = [
+            { name: "Cemento", quantity: Math.ceil(totalArea * 1), unit: "bolsas" },
+            { name: "Arena", quantity: (totalArea * 0.1).toFixed(2), unit: "m³" },
+            { name: "Piedra", quantity: (totalArea * 0.1).toFixed(2), unit: "m³" },
+            { name: "Malla Sima 4.2 (5x2)", quantity: Math.ceil(totalArea / 10), unit: "un" }
+        ];
+    }
+
+    return result;
 }

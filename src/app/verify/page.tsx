@@ -31,7 +31,9 @@ export default function VerificationPage() {
                 'top', // ArcSide default
                 DEFAULT_PRICES,
                 false, // Include Pastina
-                0 // Pastina Qty
+                0, // Pastina Qty
+                false, // includeInstallation
+                'existing' // installationType
             );
 
             const bordeL = res.items.find(i => i.id === 'borde_l');
@@ -63,7 +65,9 @@ export default function VerificationPage() {
                 'top',
                 DEFAULT_PRICES,
                 false,
-                0
+                0,
+                false,
+                'existing'
             );
 
             const dims = res.dimensions;
@@ -97,7 +101,9 @@ export default function VerificationPage() {
                 'top',
                 DEFAULT_PRICES,
                 false,
-                0
+                0,
+                false,
+                'existing'
             );
 
             const bordeL = res.items.find(i => i.id === 'borde_l')?.quantity || 0;
@@ -123,7 +129,9 @@ export default function VerificationPage() {
                 'top',
                 DEFAULT_PRICES,
                 false,
-                0
+                0,
+                false,
+                'existing'
             );
 
             const baldosa = res.items.find(i => i.id === 'baldosa')?.quantity || 0;

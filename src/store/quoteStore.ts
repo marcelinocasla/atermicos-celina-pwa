@@ -18,11 +18,14 @@ interface QuoteState {
     arcSide: 'top' | 'bottom' | 'left' | 'right';
     solarium: SolariumConfig;
     selectedColor: string;
+    includeInstallation: boolean;
+    installationType: 'existing' | 'new_slab';
 
     // Actions
     setClientInfo: (info: Partial<Pick<QuoteState, 'clientName' | 'clientPhone' | 'clientAddress' | 'transportName' | 'includePallet' | 'shippingCost' | 'includePastina' | 'pastinaQuantity'>>) => void;
     setPoolConfig: (config: Partial<Pick<QuoteState, 'poolType' | 'dimensions' | 'hasArc' | 'arcSide' | 'selectedColor'>>) => void;
     setSolarium: (config: Partial<SolariumConfig>) => void;
+    setInstallationConfig: (config: Partial<Pick<QuoteState, 'includeInstallation' | 'installationType'>>) => void;
 
     currentQuote: QuoteResult | null;
     setQuoteResult: (result: QuoteResult) => void;
@@ -47,12 +50,15 @@ export const useQuoteStore = create<QuoteState>((set) => ({
     arcSide: 'top',
     solarium: { top: 0, bottom: 0, left: 0, right: 0 },
     selectedColor: 'Beige',
+    includeInstallation: false,
+    installationType: 'existing',
 
     currentQuote: null,
 
     setClientInfo: (info) => set((state) => ({ ...state, ...info })),
     setPoolConfig: (config) => set((state) => ({ ...state, ...config })),
     setSolarium: (newConfig) => set((state) => ({ solarium: { ...state.solarium, ...newConfig } })),
+    setInstallationConfig: (config) => set((state) => ({ ...state, ...config })),
     setQuoteResult: (result) => set({ currentQuote: result }),
 
     reset: () => set({
@@ -70,6 +76,8 @@ export const useQuoteStore = create<QuoteState>((set) => ({
         arcSide: 'top',
         solarium: { top: 0, bottom: 0, left: 0, right: 0 },
         selectedColor: 'Beige',
+        includeInstallation: false,
+        installationType: 'existing',
         currentQuote: null,
     }),
 

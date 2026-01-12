@@ -47,12 +47,32 @@ export type QuoteItem = {
   unit: string; // 'un', 'm2', 'kg'
 };
 
+export type InstallationType = 'existing' | 'new_slab';
+
+export type MaterialItem = {
+  name: string;
+  quantity: number | string;
+  unit: string;
+};
+
+export type MaterialList = {
+  items: MaterialItem[];
+  notes?: string;
+};
+
+export type InstallationResult = {
+  laborCost: number;
+  materials: MaterialList;
+  description: string;
+};
+
 export type QuoteResult = {
   items: QuoteItem[];
   subtotalMaterial: number;
   palletCount: number;
   palletCost: number;
   shippingCost: number;
+  installation?: InstallationResult;
   total: number;
 };
 
@@ -76,5 +96,7 @@ export type HistoryEntry = {
     includePallet: boolean;
     includePastina: boolean;
     pastinaQuantity: number;
+    includeInstallation: boolean;
+    installationType: InstallationType;
   };
 };

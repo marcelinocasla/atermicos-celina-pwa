@@ -102,6 +102,10 @@ export async function generatePDF({
         tableRows.push(["1", "Costo de Envío", "-", `$${quote.shippingCost.toLocaleString()}`]);
     }
 
+    if (quote.installation) {
+        tableRows.push(["1", `Mano de Obra: ${quote.installation.description}`, "-", `$${quote.installation.laborCost.toLocaleString()}`]);
+    }
+
     tableRows.push(["", "", "TOTAL", `$${quote.total.toLocaleString()}`]);
 
     autoTable(doc, {
@@ -126,6 +130,40 @@ export async function generatePDF({
 
     // @ts-expect-error - jsPDF doesn't expose lastAutoTable on its type but it exists at runtime
     finalY = doc.lastAutoTable.finalY + 10;
+
+    // 3.1 Material List (If Installation included)
+    if (quote.installation) {
+        if (finalY + 40 > doc.internal.pageSize.height) {
+            doc.addPage();
+            finalY = 20;
+        }
+
+        doc.setFontSize(12);
+        doc.setTextColor(52, 152, 219); // Cyan/Blue
+        doc.setFont("helvetica", "bold");
+        doc.text("Lista de Materiales Sugerida (A comprar por el cliente)", 15, finalY);
+        finalY += 5;
+
+        const materialRows = quote.installation.materials.items.map(m => [m.name, `${m.quantity} ${m.unit}`]);
+
+        autoTable(doc, {
+            startY: finalY,
+            head: [['Material', 'Cantidad Est.']],
+            body: materialRows,
+            theme: 'grid',
+            headStyles: { fillColor: [52, 152, 219] }, // Cyan-ish
+            styles: { fontSize: 9 },
+            margin: { left: 15, right: 100 } // Narrower table for materials
+        });
+
+        // @ts-expect-error
+        finalY = doc.lastAutoTable.finalY + 5;
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.setFont("helvetica", "italic");
+        doc.text("* Materiales NO incluidos en la venta. Lista orientativa para corralón.", 15, finalY);
+        finalY += 10;
+    }
 
     // 4. Vector Planimetry (No html2canvas!)
     if (includeImage) {
