@@ -14,16 +14,17 @@ export default function QuotePage() {
   const {
     clientName, clientPhone, clientAddress, transportName, includePallet, shippingCost, includePastina, pastinaQuantity,
     poolType, dimensions, hasArc, arcSide, solarium, selectedColor,
-    includeInstallation, installationType,
+    includeInstallation, installationType, installationUnit,
     setClientInfo, setPoolConfig, setSolarium, setInstallationConfig, setQuoteResult, currentQuote
   } = useQuoteStore();
 
-  const { prices, companyInfo, addQuoteToHistory } = useAdminStore();
+  const { prices, companyInfo, addQuoteToHistory, fetchData } = useAdminStore();
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-  }, []);
+    fetchData();
+  }, [fetchData]);
 
   // Recalculate Logic
   useEffect(() => {
@@ -40,7 +41,8 @@ export default function QuotePage() {
         includePastina,
         pastinaQuantity,
         includeInstallation,
-        installationType
+        installationType,
+        installationUnit
       );
 
       // Pallet Calculation (1 pallet approx 100 items - heuristic)
@@ -67,7 +69,7 @@ export default function QuotePage() {
       console.error("Calculation Error", err);
     }
 
-  }, [isClient, dimensions, poolType, hasArc, solarium, prices, includePallet, shippingCost, includePastina, pastinaQuantity, includeInstallation, installationType, setQuoteResult]);
+  }, [isClient, dimensions, poolType, hasArc, solarium, prices, includePallet, shippingCost, includePastina, pastinaQuantity, includeInstallation, installationType, installationUnit, setQuoteResult]);
 
   // PDF Generation
   const visualizerRef = useRef<HTMLDivElement>(null);
@@ -110,7 +112,8 @@ export default function QuotePage() {
         includePastina,
         pastinaQuantity,
         includeInstallation,
-        installationType
+        installationType,
+        installationUnit
       }
     });
 
@@ -338,14 +341,14 @@ export default function QuotePage() {
                       <span className="text-sm">Tengo carpeta/contrapiso listo</span>
                     </button>
                     <button
-                      onClick={() => setInstallationConfig({ installationType: 'new_slab' })}
+                      onClick={() => setInstallationConfig({ installationType: 'new_slab', installationUnit: 'ml' })}
                       className={`p-3 rounded-xl border text-left transition-all ${installationType === 'new_slab'
                         ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400'
                         : 'bg-slate-900 border-slate-700 text-slate-500 hover:border-slate-500'
                         }`}
                     >
                       <span className="text-xs font-bold block uppercase mb-1">Escenario B</span>
-                      <span className="text-sm">Es sobre tierra (Hacer hormigón)</span>
+                      <span className="text-sm">Es sobre tierra (Hormigón con Materiales)</span>
                     </button>
                   </div>
                 )}

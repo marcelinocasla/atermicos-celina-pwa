@@ -17,7 +17,8 @@ export function calculateQuote(
     includePastina: boolean,
     pastinaQuantity: number,
     includeInstallation: boolean,
-    installationType: InstallationType
+    installationType: InstallationType,
+    installationUnit: 'ml' | 'm2'
 ): { items: QuoteItem[]; dimensions: PoolDimensions; installation?: InstallationResult } {
     // 1. Normalize dimensions
     const dims = { ...rawDimensions };
@@ -165,15 +166,21 @@ export function calculateQuote(
         const metrosLineales = totalPieces * TILE_SIZE;
         const totalArea = (fullWidthTiles * fullLengthTiles) * (TILE_SIZE * TILE_SIZE);
 
-        installation = calculateInstallation(metrosLineales, totalArea, installationType);
+        installation = calculateInstallation(metrosLineales, totalArea, installationType, installationUnit, prices);
     }
 
     return { items, dimensions: dims, installation };
 }
 
-function calculateInstallation(metrosLineales: number, totalArea: number, type: InstallationType): InstallationResult {
-    const PRECIO_LINEAL_SIN_HORMIGON = 15000;
-    const PRECIO_M2_CON_HORMIGON = 30000;
+function calculateInstallation(
+    metrosLineales: number,
+    totalArea: number,
+    type: InstallationType,
+    unit: 'ml' | 'm2',
+    prices: PriceList
+): InstallationResult {
+    const PRECIO_A = prices.installationScenarioA?.price ?? 18000;
+    const PRECIO_B = prices.installationScenarioB?.price ?? 30000;
     const ANCHO_BALDOSA = 0.5;
 
     let result: InstallationResult = {
@@ -184,28 +191,33 @@ function calculateInstallation(metrosLineales: number, totalArea: number, type: 
 
     if (type === 'existing') {
         result.description = "Colocación sobre carpeta existente + Pilotines";
-        result.laborCost = metrosLineales * PRECIO_LINEAL_SIN_HORMIGON;
+        result.laborCost = metrosLineales * PRECIO_A;
 
         const cantidadPilotines = Math.ceil(metrosLineales / 3);
         const varillasHierro = Math.ceil(cantidadPilotines / 5);
         const superficie = metrosLineales * ANCHO_BALDOSA;
 
         result.materials.items = [
-            { name: "Cemento", quantity: Math.ceil(superficie * 0.5), unit: "bolsas" },
-            { name: "Cal", quantity: Math.ceil(superficie * 0.7), unit: "bolsas" },
+            { name: "Cemento (50kg)", quantity: Math.ceil(superficie * 0.5), unit: "bolsas" },
+            { name: "Cal (25kg)", quantity: Math.ceil(superficie * 0.7), unit: "bolsas" },
             { name: "Arena", quantity: (superficie * 0.06).toFixed(1), unit: "m³" },
             { name: "Varillas del 6", quantity: varillasHierro, unit: "un" },
             { name: "Nota para el albañil", quantity: cantidadPilotines, unit: "pilotines a realizar" }
         ];
     } else {
-        result.description = "Hormigonado completo + Colocación";
-        result.laborCost = totalArea * PRECIO_M2_CON_HORMIGON;
+        result.description = `Hormigonado completo + Colocación (Cobro por Metro Lineal)`;
+
+        // Always calculate labor by ML for Scenario B as per new requirement
+        result.laborCost = metrosLineales * PRECIO_B;
+
+        const varillasPerimetro = Math.ceil((metrosLineales * 2) / 12); // 2 varillas por todo el perímetro
 
         result.materials.items = [
-            { name: "Cemento", quantity: Math.ceil(totalArea * 1), unit: "bolsas" },
-            { name: "Arena", quantity: (totalArea * 0.1).toFixed(2), unit: "m³" },
-            { name: "Piedra", quantity: (totalArea * 0.1).toFixed(2), unit: "m³" },
-            { name: "Malla Sima 4.2 (5x2)", quantity: Math.ceil(totalArea / 10), unit: "un" }
+            { name: "Cemento (50kg)", quantity: Math.ceil(metrosLineales * 0.3), unit: "bolsas" },
+            { name: "Arena", quantity: (metrosLineales * 0.05).toFixed(2), unit: "m³" },
+            { name: "Piedra", quantity: (metrosLineales * 0.05).toFixed(2), unit: "m³" },
+            { name: "Malla Sima 4.2 (5x2)", quantity: Math.ceil(metrosLineales / 20), unit: "un" },
+            { name: "Varillas del 6", quantity: Math.max(1, varillasPerimetro), unit: "un" }
         ];
     }
 

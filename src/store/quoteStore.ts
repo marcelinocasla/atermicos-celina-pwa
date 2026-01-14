@@ -20,12 +20,13 @@ interface QuoteState {
     selectedColor: string;
     includeInstallation: boolean;
     installationType: 'existing' | 'new_slab';
+    installationUnit: 'ml' | 'm2';
 
     // Actions
     setClientInfo: (info: Partial<Pick<QuoteState, 'clientName' | 'clientPhone' | 'clientAddress' | 'transportName' | 'includePallet' | 'shippingCost' | 'includePastina' | 'pastinaQuantity'>>) => void;
     setPoolConfig: (config: Partial<Pick<QuoteState, 'poolType' | 'dimensions' | 'hasArc' | 'arcSide' | 'selectedColor'>>) => void;
     setSolarium: (config: Partial<SolariumConfig>) => void;
-    setInstallationConfig: (config: Partial<Pick<QuoteState, 'includeInstallation' | 'installationType'>>) => void;
+    setInstallationConfig: (config: Partial<Pick<QuoteState, 'includeInstallation' | 'installationType' | 'installationUnit'>>) => void;
 
     currentQuote: QuoteResult | null;
     setQuoteResult: (result: QuoteResult) => void;
@@ -52,6 +53,7 @@ export const useQuoteStore = create<QuoteState>((set) => ({
     selectedColor: 'Beige',
     includeInstallation: false,
     installationType: 'existing',
+    installationUnit: 'ml',
 
     currentQuote: null,
 
@@ -78,6 +80,7 @@ export const useQuoteStore = create<QuoteState>((set) => ({
         selectedColor: 'Beige',
         includeInstallation: false,
         installationType: 'existing',
+        installationUnit: 'ml',
         currentQuote: null,
     }),
 

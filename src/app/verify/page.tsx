@@ -33,7 +33,8 @@ export default function VerificationPage() {
                 false, // Include Pastina
                 0, // Pastina Qty
                 false, // includeInstallation
-                'existing' // installationType
+                'existing', // installationType
+                'ml' // installationUnit
             );
 
             const bordeL = res.items.find(i => i.id === 'borde_l');
@@ -67,7 +68,8 @@ export default function VerificationPage() {
                 false,
                 0,
                 false,
-                'existing'
+                'existing',
+                'ml'
             );
 
             const dims = res.dimensions;
@@ -103,7 +105,8 @@ export default function VerificationPage() {
                 false,
                 0,
                 false,
-                'existing'
+                'existing',
+                'ml'
             );
 
             const bordeL = res.items.find(i => i.id === 'borde_l')?.quantity || 0;
@@ -131,7 +134,8 @@ export default function VerificationPage() {
                 false,
                 0,
                 false,
-                'existing'
+                'existing',
+                'ml'
             );
 
             const baldosa = res.items.find(i => i.id === 'baldosa')?.quantity || 0;

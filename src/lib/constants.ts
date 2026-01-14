@@ -10,6 +10,8 @@ export const DEFAULT_PRICES: PriceList = {
     deckL: { price: 6000, stock: 40, inStock: true, colors: ['Madera', 'Gris'] },
     pastina: { price: 3000, stock: 500, inStock: true },
     pallet: { price: 0, stock: 1000, inStock: true },
+    installationScenarioA: { price: 18000, stock: 1, inStock: true },
+    installationScenarioB: { price: 30000, stock: 1, inStock: true },
 };
 
 export const DEFAULT_COMPANY_INFO: CompanyInfo = {
